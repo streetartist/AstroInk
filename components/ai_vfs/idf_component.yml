@@ -1,0 +1,4 @@
+## Managed dependencies for ai_vfs.
+## LittleFS (system partition) lives in the registry as joltwallet/littlefs.
+dependencies:
+  joltwallet/littlefs: ">=1.10.0"

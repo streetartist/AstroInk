@@ -1,0 +1,25 @@
+# ESP-IDF build output
+build/
+managed_components/
+dependencies.lock
+
+# Local generated configuration. Keep sdkconfig.defaults in Git.
+sdkconfig
+sdkconfig.old
+
+# Editor and local tooling state
+.vscode/
+.cache/
+.clangd/
+
+# Vendored source may have been copied from a Git checkout.
+mquickjs/.git/
+mquickjs/.git_vendor_backup/
+
+# Logs and temporary files
+*.log
+build_log.txt
+
+# OS files
+Thumbs.db
+.DS_Store
