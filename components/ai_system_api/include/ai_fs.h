@@ -30,6 +30,9 @@ void ai_fs_close(int fd);
 
 bool ai_fs_exists(const char *path);
 
+// Size of a regular file in bytes, or -1 if missing / not a regular file.
+long ai_fs_size(const char *path);
+
 // Fill `out[0..max-1]` with directory entries. Returns the count written
 // (>=0) or -1 on error.
 int  ai_fs_listdir(const char *path, ai_dirent_t *out, int max);

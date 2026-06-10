@@ -76,18 +76,28 @@ int ai_js_run_file(ai_js_vm *vm, const char *path)
 {
     if (!vm || !path) return -1;
 
+    long size = ai_fs_size(path);
+    if (size < 0) {
+        ESP_LOGE(TAG, "cannot stat %s", path);
+        return -1;
+    }
+    if (size > AI_JS_READ_FILE_MAX) {
+        ESP_LOGE(TAG, "%s too large (%ld > %d)", path, size, AI_JS_READ_FILE_MAX);
+        return -1;
+    }
+
     int fd = ai_fs_open(path, "r");
     if (fd < 0) {
         ESP_LOGE(TAG, "cannot open %s", path);
         return -1;
     }
 
-    char *buf = malloc(AI_JS_READ_FILE_MAX + 1);
+    char *buf = malloc((size_t)size + 1);
     if (!buf) { ai_fs_close(fd); return -1; }
 
     int total = 0, n;
-    while (total < AI_JS_READ_FILE_MAX &&
-           (n = ai_fs_read(fd, buf + total, AI_JS_READ_FILE_MAX - total)) > 0) {
+    while (total < (int)size &&
+           (n = ai_fs_read(fd, buf + total, (int)size - total)) > 0) {
         total += n;
     }
     ai_fs_close(fd);

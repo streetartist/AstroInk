@@ -199,14 +199,16 @@ esp_err_t ssd1680_init(void)
         .pin_bit_mask = (1ULL << BOARD_EPD_PIN_DC) |
                         (1ULL << BOARD_EPD_PIN_RST),
     };
-    gpio_config(&out);
+    esp_err_t err = gpio_config(&out);
+    if (err != ESP_OK) return err;
 
     gpio_config_t in = {
         .mode = GPIO_MODE_INPUT,
         .pin_bit_mask = (1ULL << BOARD_EPD_PIN_BUSY),
         .pull_up_en = GPIO_PULLUP_DISABLE,
     };
-    gpio_config(&in);
+    err = gpio_config(&in);
+    if (err != ESP_OK) return err;
 
     spi_bus_config_t bus = {
         .sclk_io_num = BOARD_EPD_PIN_SCLK,
@@ -216,7 +218,11 @@ esp_err_t ssd1680_init(void)
         .quadhd_io_num = -1,
         .max_transfer_sz = SSD1680_FB_SIZE + 16,
     };
-    ESP_ERROR_CHECK(spi_bus_initialize(BOARD_EPD_SPI_HOST, &bus, SPI_DMA_CH_AUTO));
+    err = spi_bus_initialize(BOARD_EPD_SPI_HOST, &bus, SPI_DMA_CH_AUTO);
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+        ESP_LOGE(TAG, "spi_bus_initialize failed: %s", esp_err_to_name(err));
+        return err;
+    }
 
     spi_device_interface_config_t dev = {
         .clock_speed_hz = BOARD_EPD_SPI_CLOCK_HZ,
@@ -224,7 +230,11 @@ esp_err_t ssd1680_init(void)
         .spics_io_num = BOARD_EPD_PIN_CS,
         .queue_size = 4,
     };
-    ESP_ERROR_CHECK(spi_bus_add_device(BOARD_EPD_SPI_HOST, &dev, &s_spi));
+    err = spi_bus_add_device(BOARD_EPD_SPI_HOST, &dev, &s_spi);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "spi_bus_add_device failed: %s", esp_err_to_name(err));
+        return err;
+    }
 
     ssd1680_clear(false); // white
     epd_init_full();
@@ -278,14 +288,17 @@ void ssd1680_refresh_full(void)
 // minimise animation ghosting between updates.
 void ssd1680_refresh_partial(int x, int y, int w, int h)
 {
+    // After boot or deep sleep the controller needs a hardware reset + full
+    // LUT and a seeded baseline before any differential update can work.
+    if (s_mode == MODE_NONE)
+        ssd1680_refresh_full();
+
+    // Coming from MODE_FULL the baseline is already in sync: refresh_full
+    // writes both RAM banks (0x24 + 0x26), which is exactly the official
+    // DisplayPartBaseImage flow. Just swap in the partial LUT — re-seeding
+    // here would cost a second visible full-refresh flash.
     if (s_mode != MODE_PARTIAL) {
         epd_init_partial();
-        // Seed the differential baseline with the current framebuffer.
-        epd_write_full(0x24);
-        epd_write_full(0x26);
-        epd_cmd(0x22); epd_data1(UPD_FULL);
-        epd_cmd(0x20);
-        epd_wait_busy();
         s_mode = MODE_PARTIAL;
     }
 

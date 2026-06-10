@@ -51,6 +51,13 @@ bool ai_fs_exists(const char *path)
     return path && stat(path, &st) == 0;
 }
 
+long ai_fs_size(const char *path)
+{
+    struct stat st;
+    if (!path || stat(path, &st) != 0 || !S_ISREG(st.st_mode)) return -1;
+    return (long)st.st_size;
+}
+
 int ai_fs_listdir(const char *path, ai_dirent_t *out, int max)
 {
     if (!path || !out || max <= 0) return -1;

@@ -2,6 +2,7 @@
 
 > 版本 v0.1 · 2026-06-06
 > 一个面向 ESP32-S3 + 电子墨水屏的轻量级应用操作系统，支持用 **JavaScript / Lua / Python** 编写 App，统一 UI（LVGL），支持多分辨率墨水屏，具备文件系统与应用（"进程"）管理。
+> 逐模块的落地实施方案(函数清单/易错点/验收标准)见 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。
 
 ---
 

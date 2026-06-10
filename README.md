@@ -2,7 +2,7 @@
 
 AstroInk is an ESP32-S3 e-paper firmware project that is growing into a lightweight app OS for small black-and-white e-paper devices. The current tree is the P0 bring-up firmware: it mounts storage, initializes the System API, runs a JavaScript snippet through mquickjs, and drives a Waveshare 2.13" V2 / SSD1680-compatible panel through a display HAL.
 
-The long-term direction is documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): one C System API, thin language bindings, a single foreground app VM, LVGL-based UI, and pluggable display/input/storage/power HALs.
+The long-term direction is documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): one C System API, thin language bindings, a single foreground app VM, LVGL-based UI, and pluggable display/input/storage/power HALs. The module-by-module implementation plan (functions, pitfalls, DoD per milestone) lives in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
 
 ## Current Status
 

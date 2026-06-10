@@ -20,6 +20,9 @@
 #include "ai_sys.h"
 #include "ai_display.h"
 
+// Hard cap for reads into the JS heap; real size comes from ai_fs_size().
+#define AI_READ_FILE_MAX (64 * 1024)
+
 // ---------------- console / print ----------------
 
 static void print_values(JSContext *ctx, int argc, JSValue *argv)
@@ -91,8 +94,6 @@ static char *dup_arg_cstr(JSContext *ctx, JSValue v)
     return out;
 }
 
-#define AI_READ_FILE_MAX (64 * 1024)
-
 // ---------------- ai.* JS bindings ----------------
 
 static JSValue js_ai_log(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
@@ -119,11 +120,20 @@ static JSValue js_ai_kv_get(JSContext *ctx, JSValue *this_val, int argc, JSValue
 {
     char *key = dup_arg_cstr(ctx, argv[0]);
     if (!key) return JS_ThrowTypeError(ctx, "kvGet(key): string expected");
-    char val[256];
-    int n = ai_kv_get(key, val, sizeof(val));
+
+    int need = ai_kv_get_len(key);   // value length + NUL, straight from NVS
+    if (need <= 0) { free(key); return JS_NULL; }
+
+    char *val = malloc((size_t)need);
+    if (!val) { free(key); return JS_ThrowOutOfMemory(ctx); }
+
+    int n = ai_kv_get(key, val, need);
     free(key);
-    if (n < 0) return JS_NULL;
-    return JS_NewStringLen(ctx, val, (size_t)n);
+    if (n < 0) { free(val); return JS_NULL; }
+
+    JSValue ret = JS_NewStringLen(ctx, val, (size_t)n);
+    free(val);
+    return ret;
 }
 
 static JSValue js_ai_kv_set(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
@@ -141,16 +151,20 @@ static JSValue js_ai_read_file(JSContext *ctx, JSValue *this_val, int argc, JSVa
     char *path = dup_arg_cstr(ctx, argv[0]);
     if (!path) return JS_ThrowTypeError(ctx, "readFile(path): string expected");
 
+    long size = ai_fs_size(path);
+    if (size < 0) { free(path); return JS_NULL; }
+    if (size > AI_READ_FILE_MAX) size = AI_READ_FILE_MAX;
+
     int fd = ai_fs_open(path, "r");
     free(path);
     if (fd < 0) return JS_NULL;
 
-    char *buf = malloc(AI_READ_FILE_MAX);
-    if (!buf) { ai_fs_close(fd); return JS_NULL; }
+    char *buf = malloc((size_t)size + 1);
+    if (!buf) { ai_fs_close(fd); return JS_ThrowOutOfMemory(ctx); }
 
     int total = 0, n;
-    while (total < AI_READ_FILE_MAX &&
-           (n = ai_fs_read(fd, buf + total, AI_READ_FILE_MAX - total)) > 0) {
+    while (total < (int)size &&
+           (n = ai_fs_read(fd, buf + total, (int)size - total)) > 0) {
         total += n;
     }
     ai_fs_close(fd);
@@ -165,16 +179,20 @@ static JSValue js_ai_write_file(JSContext *ctx, JSValue *this_val, int argc, JSV
     char *path = dup_arg_cstr(ctx, argv[0]);
     if (!path) return JS_ThrowTypeError(ctx, "writeFile(path, data): path expected");
 
+    // Validate data BEFORE opening with "w": opening truncates, and a bad
+    // data arg must not destroy the existing file.
+    char *data = dup_arg_cstr(ctx, argv[1]);
+    if (!data) {
+        free(path);
+        return JS_ThrowTypeError(ctx, "writeFile(path, data): data string expected");
+    }
+
     int fd = ai_fs_open(path, "w");
     free(path);
-    if (fd < 0) return JS_NewInt32(ctx, -1);
+    if (fd < 0) { free(data); return JS_NewInt32(ctx, -1); }
 
-    char *data = dup_arg_cstr(ctx, argv[1]);
-    int written = -1;
-    if (data) {
-        written = ai_fs_write(fd, data, (int)strlen(data));
-        free(data);
-    }
+    int written = ai_fs_write(fd, data, (int)strlen(data));
+    free(data);
     ai_fs_close(fd);
     return JS_NewInt32(ctx, written);
 }

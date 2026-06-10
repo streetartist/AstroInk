@@ -53,6 +53,20 @@ int ai_kv_get(const char *key, char *out, int max)
     return (int)(len > 0 ? len - 1 : 0);  // len includes the NUL terminator
 }
 
+int ai_kv_get_len(const char *key)
+{
+    if (!s_ready || !key) return -1;
+
+    nvs_handle_t h;
+    if (nvs_open(KV_NAMESPACE, NVS_READONLY, &h) != ESP_OK) return -1;
+
+    size_t len = 0;
+    esp_err_t err = nvs_get_str(h, key, NULL, &len);
+    nvs_close(h);
+
+    return (err == ESP_OK) ? (int)len : -1;
+}
+
 void ai_kv_erase(const char *key)
 {
     if (!s_ready || !key) return;

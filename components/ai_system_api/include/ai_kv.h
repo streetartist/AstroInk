@@ -19,6 +19,10 @@ void ai_kv_set(const char *key, const char *value);
 // Returns the string length copied, or -1 if missing/error.
 int  ai_kv_get(const char *key, char *out, int max);
 
+// Buffer size needed to hold `key`'s value (string length + NUL), or -1 if
+// missing/error. Lets callers size a buffer before ai_kv_get.
+int  ai_kv_get_len(const char *key);
+
 // Remove a key. No-op if absent.
 void ai_kv_erase(const char *key);
 
