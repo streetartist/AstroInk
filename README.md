@@ -82,6 +82,7 @@ AstroInk/
 +-- mquickjs/                 # Embedded JavaScript engine source
 +-- docs/
     +-- ARCHITECTURE.md
+    +-- IMPLEMENTATION_PLAN.md
     +-- P0_BRINGUP.md
 ```
 
