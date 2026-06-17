@@ -47,9 +47,18 @@ idf.py -p COM5 flash monitor
 I astroink: AstroInk P0a boot
 I astroink: VFS: system=1 sd=0
 I astroink: selftest: boot #...
-I ai_js: Hello from JS on AstroInk!
+I ai_appmgr: found app 'smoke' (js) entry=/system/apps/smoke/main.js
+I ai_appmgr: scan complete: 1 app(s)
+I ai_appmgr: launch 'smoke' (js) entry=/system/apps/smoke/main.js
+App smoke JS on AstroInk
 I ssd1680: init ok (122x250, 4000 bytes fb)
 I astroink: full test pattern drawn
+I astroink: event: timer id=256 repeat=1
+app event timer 256 1 count=1
+I astroink: event: timer id=256 repeat=1
+app event timer 256 1 count=2
+I ai_appmgr: app 'smoke' exit code=0
+I ai_appmgr: destroy app 'smoke'
 ```
 
 > 说明：这块 Waveshare 2.13" V2 屏标称 212×104，但控制器原生 framebuffer 是
@@ -78,4 +87,4 @@ I astroink: full test pattern drawn
 
 P0a 通过后，下一步是 **P0b-UI**：叠加 LVGL v9 单色，把驱动接到 LVGL flush callback。
 
-当前代码已经接入 mquickjs 和 `ai.*` System API 冒烟测试；后续要把写死在 `main.c` 的 JS hello 迁移为由 App Manager 加载 `/system` 或 `/sd/apps/.../main.js`。
+当前代码已经接入 mquickjs、`ai.*` System API、runtime registry 和最小 App Manager 冒烟测试；启动时会写入 `/system/apps/smoke/{manifest.json,main.js}`，扫描 manifest 后加载 `/system/apps/smoke/main.js`。后续要把它扩展为完整生命周期、SD App 扫描和 Launcher。

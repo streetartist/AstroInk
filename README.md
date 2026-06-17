@@ -16,7 +16,8 @@ Implemented:
   - `ai_fs_*` for VFS file access.
   - `ai_kv_*` for NVS-backed persistent key/value strings.
   - `ai_sys_*` for millis/sleep/battery placeholder.
-- JavaScript runtime component using `mquickjs`.
+- JavaScript runtime component using `mquickjs`, registered behind the generic runtime interface.
+- Minimal App Manager path that scans manifest-based apps from `/system/apps`.
 - `ai.*` JavaScript namespace for log, time, KV, file, and screen-size access.
 - P0 display bring-up demo with full refresh plus partial-refresh animation.
 
@@ -110,20 +111,38 @@ On boot, `main/app_main()` performs the current P0 self-test sequence:
 2. Try to mount `/sd`; missing SD is non-fatal.
 3. Initialize the System API and update a persistent boot counter in NVS.
 4. Write and read back `/system/boot.txt`.
-5. Register and initialize the SSD1680 display driver through the Display HAL.
-6. Create a mquickjs VM and run an embedded JavaScript hello script.
-7. Draw a full-screen e-paper test pattern.
-8. Run a partial-refresh animation near the bottom of the screen.
+5. Initialize the core event queue and software timer service.
+6. Register the JavaScript runtime in the generic runtime registry.
+7. Register and initialize the SSD1680 display driver through the Display HAL.
+8. Write a minimal JS smoke app to `/system/apps/smoke/{manifest.json,main.js}`, scan manifests, and launch it through App Manager.
+9. Start a 5 second core heartbeat timer.
+10. Draw a full-screen e-paper test pattern.
+11. Run a partial-refresh animation near the bottom of the screen.
 
 Typical log lines include:
 
 ```text
 I astroink: AstroInk P0a boot
 I astroink: VFS: system=1 sd=0
+I ai_runtime: registered runtime 'js'
+I astroink: runtime lookup: js=ok
 I astroink: selftest: boot #...
-I ai_js: Hello from JS on AstroInk!
+I ai_appmgr: init
+I ai_appmgr: found app 'smoke' (js) entry=/system/apps/smoke/main.js
+I ai_appmgr: scan complete: 1 app(s)
+I ai_appmgr: launch 'smoke' (js) entry=/system/apps/smoke/main.js
+I ai_js: VM created (65536 byte heap)
+App smoke JS on AstroInk
+I astroink: core smoke: heartbeat timer id=...
 I astroink: full test pattern drawn
+I ai_loop: run
 I astroink: partial frame ...
+I astroink: event: timer id=... repeat=1
+app event timer ... 1 count=1
+I astroink: event: timer id=... repeat=1
+app event timer ... 1 count=2
+I ai_appmgr: app 'smoke' exit code=0
+I ai_appmgr: destroy app 'smoke'
 ```
 
 See [docs/P0_BRINGUP.md](docs/P0_BRINGUP.md) for display bring-up details and troubleshooting.
@@ -136,7 +155,7 @@ The current JS runtime exposes an `ai` global namespace backed by the C System A
 ai.log("Hello from JS on AstroInk!");
 ai.log("screen:", ai.screenW() + "x" + ai.screenH());
 
-var n = ai.kvGet("js_runs");
+    var n = ai.kvGet("js_runs");
 n = (n ? parseInt(n) : 0) + 1;
 ai.kvSet("js_runs", "" + n);
 

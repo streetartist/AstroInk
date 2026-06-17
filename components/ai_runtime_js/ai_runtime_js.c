@@ -6,6 +6,8 @@
 
 #include "mquickjs.h"
 #include "ai_fs.h"
+#include "ai_event.h"
+#include "ai_runtime.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 
@@ -17,6 +19,7 @@ extern const JSSTDLibraryDef js_stdlib;
 struct ai_js_vm {
     JSContext *ctx;
     void      *mem;
+    bool       stop_requested;
 };
 
 #define AI_JS_READ_FILE_MAX (128 * 1024)
@@ -114,4 +117,67 @@ void ai_js_destroy(ai_js_vm *vm)
     if (vm->ctx) JS_FreeContext(vm->ctx);  // runs finalizers
     free(vm->mem);
     free(vm);
+}
+
+static int ai_js_dispatch(ai_js_vm *vm, const ai_event_t *ev)
+{
+    if (!vm || !vm->ctx || !ev) return -1;
+
+    JSContext *ctx = vm->ctx;
+    JSValue global = JS_GetGlobalObject(ctx);
+    JSValue fn = JS_GetPropertyStr(ctx, global, "__ai_dispatch");
+    if (!JS_IsFunction(ctx, fn)) return 0;
+
+    JS_PushArg(ctx, JS_NewInt32(ctx, ev->type));
+    JS_PushArg(ctx, JS_NewInt32(ctx, ev->a));
+    JS_PushArg(ctx, JS_NewInt32(ctx, ev->b));
+    JS_PushArg(ctx, fn);
+    JS_PushArg(ctx, global);
+
+    JSValue ret = JS_Call(ctx, 3);
+    return eval_check(vm, ret);
+}
+
+static void *runtime_create(size_t heap_limit)
+{
+    return ai_js_create(heap_limit);
+}
+
+static int runtime_run_file(void *vm, const char *path)
+{
+    return ai_js_run_file((ai_js_vm *)vm, path);
+}
+
+static int runtime_dispatch(void *vm, const ai_event_t *ev)
+{
+    return ai_js_dispatch((ai_js_vm *)vm, ev);
+}
+
+static void runtime_pump(void *vm)
+{
+    (void)vm;
+}
+
+static void runtime_request_stop(void *vm)
+{
+    if (vm) ((ai_js_vm *)vm)->stop_requested = true;
+}
+
+static void runtime_destroy(void *vm)
+{
+    ai_js_destroy((ai_js_vm *)vm);
+}
+
+const ai_runtime_t *ai_runtime_js(void)
+{
+    static const ai_runtime_t rt = {
+        .lang = "js",
+        .create = runtime_create,
+        .run_file = runtime_run_file,
+        .dispatch = runtime_dispatch,
+        .pump = runtime_pump,
+        .request_stop = runtime_request_stop,
+        .destroy = runtime_destroy,
+    };
+    return &rt;
 }

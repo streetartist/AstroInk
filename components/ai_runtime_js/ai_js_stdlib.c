@@ -29,6 +29,7 @@ static const JSPropDef js_ai[] = {
     JS_CFUNC_DEF("exists",     1, js_ai_exists),
     JS_CFUNC_DEF("screenW",    0, js_ai_screen_w),
     JS_CFUNC_DEF("screenH",    0, js_ai_screen_h),
+    JS_CFUNC_DEF("appExit",    1, js_ai_app_exit),
     JS_PROP_END,
 };
 static const JSClassDef js_ai_obj = JS_OBJECT_DEF("ai", js_ai);

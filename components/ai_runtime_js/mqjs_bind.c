@@ -19,6 +19,7 @@
 #include "ai_kv.h"
 #include "ai_sys.h"
 #include "ai_display.h"
+#include "ai_appmgr.h"
 
 // Hard cap for reads into the JS heap; real size comes from ai_fs_size().
 #define AI_READ_FILE_MAX (64 * 1024)
@@ -218,6 +219,15 @@ static JSValue js_ai_screen_h(JSContext *ctx, JSValue *this_val, int argc, JSVal
     int w = 0, h = 0;
     ai_display_size(&w, &h);
     return JS_NewInt32(ctx, h);
+}
+
+static JSValue js_ai_app_exit(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
+{
+    int code = 0;
+    if (argc >= 1 && JS_ToInt32(ctx, &code, argv[0]))
+        return JS_EXCEPTION;
+    ai_app_exit(code);
+    return JS_UNDEFINED;
 }
 
 // Pulls in `js_stdlib` (ROM tables) referencing every function above.

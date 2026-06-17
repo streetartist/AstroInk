@@ -278,9 +278,10 @@ AstroInk/
 - ✅ P0b-HAL：**Display HAL**（`ai_hal` 组件，`ai_display_drv_t` 函数指针表 + 活动驱动注册表）+ SSD1680 适配器；main 已改为经 HAL 驱动屏
 - ✅ **VFS 存储层**（`ai_vfs` 组件）：LittleFS→`/system`（"storage" 分区，≈12MB）、SD(SDMMC 4-bit)→`/sd`；SD 缺卡非致命。SD 引脚据原理图：CLK=IO12/CMD=IO13/D0=IO11/D1=IO10/D2=IO21/D3=IO14/CD=IO2。依赖 `joltwallet/littlefs`（managed）
 - ✅ **System API（非 UI 子集）**（`ai_system_api` 组件）：`ai_fs_*`（POSIX 包装 VFS）、`ai_kv_*`（NVS 持久 KV）、`ai_sys_*`（millis/sleep；battery 待 ADC 标定）。main 启动有存储+API 冒烟自测（KV 启动计数 + /system 文件读写）
-- ✅ **P0c JS 运行时**（`ai_runtime_js` 组件）：接入 mquickjs，`ai.*` 全局命名空间桥接 System API（log/millis/sleep/kvGet/kvSet/readFile/writeFile/exists/screenW/screenH）。VM 内存在 PSRAM。stdlib 经 host 工具从 `ai_js_stdlib.c` 生成 `generated/{mquickjs_atom.h,ai_stdlib.h}`（`-m32`，已提交；`tools/gen_stdlib.sh` 重生成）。**已用 host gcc 端到端验证** codegen + 引擎 + ai 命名空间 + JS_Eval 跑通。main 启动跑 `js_hello()` 示例脚本
-- ⏳ P0a 真机验证：等烧录（见 `docs/P0_BRINGUP.md`）。冻结 System API（含 UI 部分）属 P1
-- ⬜ 后续：App Manager/VM 抽象（`ai_runtime_t` + 生命周期 + Event Bus）、LVGL UI、Lua/Python
+- ✅ **P0c JS 运行时**（`ai_runtime_js` 组件）：接入 mquickjs，`ai.*` 全局命名空间桥接 System API（log/millis/sleep/kvGet/kvSet/readFile/writeFile/exists/screenW/screenH）。VM 内存在 PSRAM。stdlib 经 host 工具从 `ai_js_stdlib.c` 生成 `generated/{mquickjs_atom.h,ai_stdlib.h}`（`-m32`，已提交；`tools/gen_stdlib.sh` 重生成）。**已用 host gcc 端到端验证** codegen + 引擎 + ai 命名空间 + JS_Eval 跑通
+- ✅ **M3/M5/M6 雏形**：`ai_core` 事件队列、软件定时器、统一 `ai_loop_run()` 主循环、`ai_runtime_t` registry、最小 `ai_appmgr` manifest 扫描和文件启动路径已接入；main 启动写入并通过 App Manager 加载 `/system/apps/smoke/main.js`
+- ⏳ P0a 真机显示验证：等屏幕实物（见 `docs/P0_BRINGUP.md`）。冻结 System API（含 UI 部分）属 P1
+- ⬜ 后续：完整 App 生命周期、SD App 热扫描、LVGL UI、Lua/Python
 - ⬜ P0b-UI LVGL v9 单色（接 HAL flush）　⬜ P0c mquickjs JS Hello　⬜ P1 冻结 System API　⬜ P2 Lua　⬜ P3 PikaPython　⬜ P4 平台化
 
 > 参考：

@@ -6,6 +6,7 @@
 // AstroInk System API (see mqjs_bind.c).
 
 #include <stddef.h>
+#include "ai_runtime.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +29,9 @@ int  ai_js_eval(ai_js_vm *vm, const char *src, size_t len, const char *name);
 int  ai_js_run_file(ai_js_vm *vm, const char *path);
 
 void ai_js_destroy(ai_js_vm *vm);
+
+// Runtime adapter for App Manager / ai_runtime_find("js").
+const ai_runtime_t *ai_runtime_js(void);
 
 #ifdef __cplusplus
 }

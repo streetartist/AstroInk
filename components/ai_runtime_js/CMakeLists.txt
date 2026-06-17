@@ -16,7 +16,7 @@ idf_component_register(
          "${MQJS}/cutils.c"
     INCLUDE_DIRS "include"
     PRIV_INCLUDE_DIRS "generated" "${MQJS}"
-    REQUIRES ai_system_api ai_hal
+    REQUIRES ai_system_api ai_hal ai_core ai_appmgr
     PRIV_REQUIRES esp_timer
 )
 
